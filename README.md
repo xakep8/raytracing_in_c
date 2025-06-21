@@ -14,5 +14,5 @@ after this you should see a binary with the name `raytracing` in your current di
 
 `./raytracing`
 
-this should open up a window by the name `Raytracing`, try clicking inside the window and dragging around, you'll see the lightsouce aka the white circle move. YES IT IS A WHITE CIRCLE, CLICHE, I KNOW, can't help it
+this should open up a window by the name `Raytracing`, try clicking inside the window and dragging around, you'll see the lightsouce aka the red circle move. YES IT IS A RED CIRCLE, CLICHE, I KNOW, can't help it
 I'm very primitive in terms for graphics.
