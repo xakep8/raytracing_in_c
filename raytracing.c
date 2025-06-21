@@ -64,7 +64,7 @@ void generate_rays_to_circle(SDL_Surface *surface, struct Circle *source, struct
 	double tangent_angle1 = base_angle + asin(sin_theta);
 	double tangent_angle2 = base_angle - asin(sin_theta);
 
-	int num_rays = 50;
+	int num_rays = 5000;
 	double angle_step = (tangent_angle1 - tangent_angle2) / num_rays;
 
 	for (int ray = 0; ray <= num_rays; ray++)
@@ -127,6 +127,70 @@ void generate_rays_from_center(SDL_Surface *surface, struct Circle *circle, Uint
 	SDL_UnlockSurface(surface);
 }
 
+void generate_rays_with_shadows(SDL_Surface *surface, struct Circle *source, struct Circle *target, Uint32 light_color, Uint32 shadow_color)
+{
+    SDL_LockSurface(surface);
+
+    int num_rays = 7200;
+    double angle_step = 2 * M_PI / num_rays;
+
+    for (int i = 0; i < num_rays; i++)
+    {
+        double angle = i * angle_step;
+        double cos_angle = cos(angle);
+        double sin_angle = sin(angle);
+        
+        double ray_x = source->x;
+        double ray_y = source->y;
+        double step_size = 1.0;
+        
+        int in_shadow = 0;
+        int passed_shadow = 0;
+        
+        while (ray_x >= 0 && ray_x < WIDTH && ray_y >= 0 && ray_y < HEIGHT)
+        {
+            double dx_to_target = ray_x - target->x;
+            double dy_to_target = ray_y - target->y;
+            double distance_to_target = dx_to_target * dx_to_target + dy_to_target * dy_to_target;
+            
+            if (distance_to_target <= target->radius * target->radius)
+            {
+                in_shadow = 1;
+                passed_shadow = 1;
+            }
+            else if (passed_shadow)
+            {
+                if (ray_x >= 0 && ray_x < WIDTH && ray_y >= 0 && ray_y < HEIGHT)
+                {
+                    ((Uint32*)surface->pixels)[(int)ray_y * surface->w + (int)ray_x] = shadow_color;
+                }
+            }
+            else if (!in_shadow)
+            {
+                if (ray_x >= 0 && ray_x < WIDTH && ray_y >= 0 && ray_y < HEIGHT)
+                {
+                    double dx_to_source = ray_x - source->x;
+                    double dy_to_source = ray_y - source->y;
+                    if (dx_to_source * dx_to_source + dy_to_source * dy_to_source > source->radius * source->radius)
+                    {
+                        ((Uint32*)surface->pixels)[(int)ray_y * surface->w + (int)ray_x] = light_color;
+                    }
+                }
+            }
+            
+            ray_x += step_size * cos_angle;
+            ray_y += step_size * sin_angle;
+            
+            if (in_shadow && distance_to_target > target->radius * target->radius)
+            {
+                in_shadow = 0;
+            }
+        }
+    }
+
+    SDL_UnlockSurface(surface);
+}
+
 int main()
 {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -153,9 +217,11 @@ int main()
 			}
 		}
 		SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 0, 0, 0));
-		fillCircle(surface, &circle, SDL_MapRGB(surface->format, 255, 255, 255));
+		fillCircle(surface, &circle, SDL_MapRGB(surface->format, 255, 0, 0));
 		fillCircle(surface, &shadow, SDL_MapRGB(surface->format, 0, 0, 255));
-		generate_rays_to_circle(surface, &circle, &shadow, SDL_MapRGB(surface->format, 255, 255, 255));
+		// generate_rays_from_center(surface, &circle, SDL_MapRGB(surface->format, 255, 255, 255));
+		// generate_rays_to_circle(surface, &circle, &shadow, SDL_MapRGB(surface->format, 255, 255, 255));
+		generate_rays_with_shadows(surface, &circle, &shadow, SDL_MapRGB(surface->format, 255, 255, 255), SDL_MapRGB(surface->format, 0, 0, 0));
 		SDL_UpdateWindowSurface(window);
 		SDL_Delay(10);
 	}
